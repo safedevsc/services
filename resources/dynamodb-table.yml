@@ -1,0 +1,17 @@
+Resources:
+  FormsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: ${self:custom.tableName}
+      AttributeDefinitions:
+        - AttributeName: UUID
+          AttributeType: S
+        - AttributeName: FORM_TYPE
+          AttributeType: S
+      KeySchema:
+        - AttributeName: UUID
+          KeyType: HASH
+        - AttributeName: FORM_TYPE
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST

@@ -1,0 +1,113 @@
+app: my-first-app
+service: development
+package:
+  individually: true
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+plugins:
+  - serverless-bundle
+  - serverless-offline
+  - serverless-dotenv-plugin
+  - serverless-iam-roles-per-function
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  tableName: ${self:custom.stage}-forms
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-west-1
+  environment:
+    DOMAIN_SUFFIX: dragon
+    tableName: ${self:custom.tableName}
+    stripeSecretKey: ${env:STRIPE_SECRET_KEY}
+
+functions:
+  getAllFormsByType:
+    handler: src/endpoints/formHandler.getAll
+    iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+      Resource: 
+        - "Fn::GetAtt": [ FormsTable, Arn ]
+    events:
+      - httpApi:
+          path: /api/v0/formservice/{formType}
+          method: get
+#          authoriser: serviceAuthorizer
+  getForm:
+    handler: src/endpoints/formHandler.get
+    iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:GetItem
+      Resource:
+        - "Fn::GetAtt": [ FormsTable, Arn ]
+    events:
+      - httpApi:
+          path: /api/v0/formservice/{formType}/{uuid}
+          method: get
+#          authoriser: serviceAuthorizer
+  postForm:
+    handler: src/endpoints/formHandler.post
+    iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:PutItem
+      Resource:
+        - "Fn::GetAtt": [ FormsTable, Arn ]
+    events:
+      - httpApi:
+          path: /api/v0/formservice/{formType}
+          method: post
+#          authoriser: serviceAuthorizer
+  putForm:
+    handler: src/endpoints/formHandler.put
+    iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+      Resource:
+        - "Fn::GetAtt": [ FormsTable, Arn ]
+    events:
+      - httpApi:
+          path: /api/v0/formservice/{formType}/{uuid}
+          method: put
+#          authoriser: serviceAuthorizer
+  deleteForm:
+    handler: src/endpoints/formHandler.del
+    iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ FormsTable, Arn ]
+    events:
+      - httpApi:
+          path: /api/v0/formservice/{formType}/{uuid}
+          method: delete
+#          authoriser: serviceAuthorizer
+
+# you can add CloudFormation resource templates here
+resources:
+
+  # DynamoDB
+  - ${file(resources/dynamodb-table.yml)}
+  # S3
+  - ${file(resources/s3.yml)}
+  # Cognito
+  - ${file(resources/cognito-user-pool.yml)}
+  - ${file(resources/cognito-identity-pool.yml)}
+  

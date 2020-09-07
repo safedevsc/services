@@ -1,0 +1,3 @@
+Resources:
+  HttpApi:
+    DependsOn: CognitoUserPool
